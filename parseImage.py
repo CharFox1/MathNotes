@@ -1,0 +1,1 @@
+# do ocr stuff here to find all chars in image
