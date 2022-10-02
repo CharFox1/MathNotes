@@ -1,14 +1,17 @@
 # do ocr stuff here to find all chars in image
 
+from matplotlib.ft2font import HORIZONTAL
 from matplotlib.pyplot import show
+import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 from scipy.ndimage import rotate
+#from tesseract import image_to_string, image_to_boxes
 
 def showImage(img, name="image"):
 
     #define the screen resulation
-    screen_res = 1280, 720
+    screen_res = 1000, 600
     scale_width = screen_res[0] / img.shape[1]
     scale_height = screen_res[1] / img.shape[0]
     scale = min(scale_width, scale_height)
@@ -27,14 +30,6 @@ def showImage(img, name="image"):
 def readImage(filename="images/puppy.jpg"):
     # Load an color image in color
     img = cv2.imread(filename,1)
-    
-    # resize image
-    #scale_percent = 30 # percent of original size
-    #width = int(img.shape[1] * scale_percent / 100)
-    #height = int(img.shape[0] * scale_percent / 100)
-    #dim = (width, height)
-  
-    #resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
 
     # show image
     showImage(img)
@@ -48,35 +43,57 @@ def find_score(arr, angle):
 
 def skewCorrect(img):
 
+    # grayscale
+    img_grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    showImage(img_grey,"grayscale")
+
     # thresholding
-    #imgT = cv2.adaptiveThreshold(img,255,
-    #    cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,21,5)
-    #imgf = cv2.threshold(img_grey, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+    imgT = cv2.adaptiveThreshold(img_grey,255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,29,3)
+    #imgT = cv2.threshold(img_grey, 150, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
     
-    #showImage(imgT, "threshold")
+    showImage(imgT, "threshold")
+
+    #imgT = cv2.fastNlMeansDenoising(imgT, None, 7, 21, 12)
+    #showImage(imgT, "denoise")
 
     # canny edge detection
     #imgT = cv2.bitwise_not(cv2.Canny(img, 50, 200))
-
-    Z = img.reshape((-1,1))
+    """
+    Z = img_grey.reshape((-1,1))
     # convert to np.float32
     Z = np.float32(Z)
     # define criteria, number of clusters(K) and apply kmeans()
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
     K = 2
-    ret,label,center=cv2.kmeans(Z,K,None,criteria,10,cv2.KMEANS_RANDOM_CENTERS)
+    initLabels = np.array([[0], [255]])
+    ret,label,center=cv2.kmeans(Z,K,initLabels,criteria,10,cv2.KMEANS_USE_INITIAL_LABELS)
     # Now convert back into uint8, and make original image
     center = np.uint8(center)
     res = center[label.flatten()]
-    imgK = res.reshape((img.shape))
+    imgK = res.reshape((img_grey.shape))
+    """
+    #showImage(imgK, "k-means")
 
-    showImage(imgK, "k-means")
+    # erosion and dilation 
+    # flip black and white
+    imgT = cv2.bitwise_not(imgT, 1)
 
-    # erosion and dilation
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
-    imgT = cv2.morphologyEx(imgK, cv2.MORPH_OPEN, kernel, iterations=3)
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    imgT = cv2.morphologyEx(imgT, cv2.MORPH_OPEN, kernel, iterations=1)
+
+    se1 = cv2.getStructuringElement(cv2.MORPH_RECT, (2,2))
+    se2 = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
+    imgT = cv2.erode(imgT, kernel, iterations=2)
+    imgT = cv2.morphologyEx(imgT, cv2.MORPH_OPEN, se1, iterations=2)
+    showImage(imgT, "open")
+    #imgT = cv2.erode(imgT, se1, iterations=1)
+    #imgT = cv2.erode(imgT, se2, iterations=1)
+    imgT = cv2.morphologyEx(imgT, cv2.MORPH_CLOSE, se1, iterations=2)
+    showImage(imgT, "close")
+    imgT = cv2.dilate(imgT, kernel, iterations=5)
+
+    # flip black and white back
+    imgT = cv2.bitwise_not(imgT, 1)
 
     showImage(imgT, "eroded")
     
@@ -91,7 +108,7 @@ def skewCorrect(img):
     best_angle = angles[scores.index(best_score)]
     print('Best angle: {}'.format(best_angle))
     # correct skew
-    data = rotate(img, best_angle, reshape=False, order=0)
+    data = rotate(imgT, best_angle, reshape=False, order=0)
     return data
 
 def preprocess(img):
@@ -105,7 +122,7 @@ def preprocess(img):
     showImage(img_blur,"blur")
     
     # skew correction
-    img_skew = skewCorrect(img_blur)
+    img_skew = skewCorrect(img)
     showImage(img_skew,"skew")
 
     # denoise
@@ -116,7 +133,9 @@ def preprocess(img):
 
 def findLines(img):
 
-    
+    horizontal_hist = np.sum(img,axis=1,keepdims=True)/255
+    plt.hist(horizontal_hist, orientation="horizontal")
+    plt.show()
     
     return img
 
@@ -125,7 +144,11 @@ def main():
     #img = readImage("images/puppy.jpg")
     img = readImage("images/helloWorldEasy.jpg")
     #img = readImage("images/twoLinesRotated.jpg")
-    preprocess(img)
+
+    #print(image_to_boxes("images/helloWorldEasy.jpg"))
+
+    img = preprocess(img)
+    findLines(img)
 
 if __name__ == "__main__":
     main()
