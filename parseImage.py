@@ -147,11 +147,15 @@ def prediction(image_path, model):
     os.chdir('trainingData/datasets')
     classes = [name for name in os.listdir(".") if os.path.isdir(name)]
     #len(classes)
+    print(classes)
+    os.chdir('../../')
+    os.chdir("segmented")
 
+    print(image_path)
     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     plt.imshow(img, cmap = 'gray')
     img = cv2.resize(img,(45, 45))
-    norm_image = cv2.normalize(img, None, alpha = 0, beta = 1, norm_type = cv.NORM_MINMAX, dtype = cv.CV_32F)
+    norm_image = cv2.normalize(img, None, alpha = 0, beta = 1, norm_type = cv2.NORM_MINMAX, dtype = cv2.CV_32F)
     norm_image = norm_image.reshape((norm_image.shape[0], norm_image.shape[1], 1))
     case = np.asarray([norm_image])
     pred = model.predict([case])    
@@ -181,7 +185,8 @@ def findLines(img):
 
     model = models.load_model("OurModel/")
     result = ""
-    for i in segmented_images:
+    print("getting predictions for {} chars".format(len(segmented_images)))
+    for i in files:
         result += prediction(i, model)
     
     return result
