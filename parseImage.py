@@ -6,7 +6,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 from scipy.ndimage import rotate
-#from tesseract import image_to_string, image_to_boxes
+from sympy.parsing.sympy_parser import parse_expr
+from sympy.printing.preview import preview
+from PIL import Image,ImageOps
+import CharacterSegmentation as cs
+import os
+from matplotlib.pyplot import figure
+from tensorflow.keras import models
 
 def showImage(img, name="image"):
 
@@ -131,34 +137,73 @@ def preprocess(img):
 
     return dst
 
+def symbol(ind, classes):
+    symbols = classes
+    symb = symbols[ind.argmax()]
+    return symb
+
+def prediction(image_path, model):
+
+    os.chdir('trainingData/datasets')
+    classes = [name for name in os.listdir(".") if os.path.isdir(name)]
+    #len(classes)
+
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    plt.imshow(img, cmap = 'gray')
+    img = cv2.resize(img,(45, 45))
+    norm_image = cv2.normalize(img, None, alpha = 0, beta = 1, norm_type = cv.NORM_MINMAX, dtype = cv.CV_32F)
+    norm_image = norm_image.reshape((norm_image.shape[0], norm_image.shape[1], 1))
+    case = np.asarray([norm_image])
+    pred = model.predict([case])    
+    return 'Prediction: ' + symbol(pred, classes)
+
 def findLines(img):
 
-    # flip black and white back
-    #img = cv2.bitwise_not(img, 1)
+    SEGMENTED_OUTPUT_DIR = './segmented/'
+    INPUT_IMAGE = './input/input_1.jpg'
+    cv2.imwrite(INPUT_IMAGE, img)
+    cs.image_segmentation(INPUT_IMAGE)
 
-    #horizontal_hist = np.sum(img,axis=1,keepdims=True)/255
-    #print(horizontal_hist.shape)
-    #print(max(horizontal_hist))
-    #plt.barh(range(1531), 1, horizontal_hist)
-    #plt.show()
-    
-    contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    
-    cont = cv2.drawContours(img, contours, -1, (200,0,200), 3)
-    showImage(cont, "contours")
+    segmented_images = []
+    files = [f for r, d, f in os.walk(SEGMENTED_OUTPUT_DIR)][0]
+    files = [f for f in files if ".jpg" in f]
+    print(files)
+    for f in files:
+        segmented_images.append(Image.open(SEGMENTED_OUTPUT_DIR + f))
 
-    return img
+    figure(figsize=(18,18))
+
+    size = len(segmented_images)
+    for i in range(size):
+        img = segmented_images[i]
+        plt.subplot(2, size, i + 1)
+        plt.imshow(img)
+
+    model = models.load_model("OurModel/")
+    result = ""
+    for i in segmented_images:
+        result += prediction(i, model)
+    
+    return result
+
+def text2latex(text):
+
+    expr = parse_expr(text)
+    preview(expr, output='png')
 
 def main():
     #img = readImage("images/notes3.png")
     #img = readImage("images/puppy.jpg")
+    print("hello?")
     img = readImage("images/helloWorldEasy.jpg")
     #img = readImage("images/twoLinesRotated.jpg")
 
     #print(image_to_boxes("images/helloWorldEasy.jpg"))
 
     img = preprocess(img)
-    findLines(img)
+    result = findLines(img)
+
+    text2latex(result)
 
 if __name__ == "__main__":
     main()

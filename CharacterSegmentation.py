@@ -106,7 +106,7 @@ def letter_width(contours):
 	return letter_width_sum/count
 
 
-def end_wrd_dtct(lines, i, bin_img, mean_lttr_width, total_width):
+def end_wrd_dtct(lines, i, bin_img, mean_lttr_width, total_width, final_thr):
 	count_y = np.zeros(shape = total_width)
 	for x in range(total_width):
 		for y in range(lines[i][0],lines[i][1]):
@@ -211,6 +211,7 @@ def image_segmentation(filepath):
 	print("Noise Removal From Image.........")
 	kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
 	final_thr = cv2.morphologyEx(bin_img, cv2.MORPH_CLOSE, kernel)
+	print("made final_thr")
 	contr_retrival = final_thr.copy()
     
 
@@ -269,7 +270,7 @@ def image_segmentation(filepath):
 	x_lines = []
 
 	for i in range(len(lines_img)):
-		x_lines.append(end_wrd_dtct(lines, i, bin_img, mean_lttr_width, width))
+		x_lines.append(end_wrd_dtct(lines, i, bin_img, mean_lttr_width, width, final_thr))
 
 	for i in range(len(x_lines)):
 		x_lines[i].append(width)
