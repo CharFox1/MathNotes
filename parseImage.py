@@ -144,12 +144,93 @@ def symbol(ind, classes):
 
 def prediction(image_path, model):
 
-    os.chdir('trainingData/datasets')
-    classes = [name for name in os.listdir(".") if os.path.isdir(name)]
+    classes = ['!',
+ '(',
+ ')',
+ '+',
+ ',',
+ '-',
+ '0',
+ '1',
+ '2',
+ '3',
+ '4',
+ '5',
+ '6',
+ '7',
+ '8',
+ '9',
+ '=',
+ 'A',
+ 'alpha',
+ 'ascii_124',
+ 'b',
+ 'beta',
+ 'C',
+ 'cos',
+ 'd',
+ 'Delta',
+ 'div',
+ 'e',
+ 'exists',
+ 'f',
+ 'forall',
+ 'forward_slash',
+ 'G',
+ 'gamma',
+ 'geq',
+ 'gt',
+ 'H',
+ 'i',
+ 'in',
+ 'infty',
+ 'int',
+ 'j',
+ 'k',
+ 'l',
+ 'lambda',
+ 'ldots',
+ 'leq',
+ 'lim',
+ 'log',
+ 'lt',
+ 'M',
+ 'mu',
+ 'N',
+ 'neq',
+ 'o',
+ 'p',
+ 'phi',
+ 'pi',
+ 'pm',
+ 'prime',
+ 'q',
+ 'R',
+ 'rightarrow',
+ 'S',
+ 'sigma',
+ 'sin',
+ 'sqrt',
+ 'sum',
+ 'T',
+ 'tan',
+ 'theta',
+ 'times',
+ 'u',
+ 'v',
+ 'w',
+ 'X',
+ 'y',
+ 'z',
+ '[',
+ ']',
+ '{',
+ '}']
     #len(classes)
     print(classes)
-    os.chdir('../../')
-    os.chdir("segmented")
+    print(os.getcwd())
+    #os.chdir('../../')
+    #os.chdir("segmented")
 
     print(image_path)
     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
@@ -159,7 +240,7 @@ def prediction(image_path, model):
     norm_image = norm_image.reshape((norm_image.shape[0], norm_image.shape[1], 1))
     case = np.asarray([norm_image])
     pred = model.predict([case])    
-    return 'Prediction: ' + symbol(pred, classes)
+    return symbol(pred, classes)
 
 def findLines(img):
 
@@ -183,25 +264,26 @@ def findLines(img):
         plt.subplot(2, size, i + 1)
         plt.imshow(img)
 
-    model = models.load_model("OurModel/")
+    model = models.load_model("OurModel.h5")
     result = ""
     print("getting predictions for {} chars".format(len(segmented_images)))
     for i in files:
-        result += prediction(i, model)
+        result += prediction("./segmented/"+i, model) + " "
     
     return result
 
 def text2latex(text):
+    print("TEXT: {}".format(text))
 
-    expr = parse_expr(text)
-    preview(expr, output='png')
+    #expr = parse_expr(text)
+    #preview(expr, output='png')
 
 def main():
     #img = readImage("images/notes3.png")
     #img = readImage("images/puppy.jpg")
-    print("hello?")
-    img = readImage("images/helloWorldEasy.jpg")
+    #img = readImage("images/helloWorldEasy.jpg")
     #img = readImage("images/twoLinesRotated.jpg")
+    img = readImage("input/test3.jpg")
 
     #print(image_to_boxes("images/helloWorldEasy.jpg"))
 
