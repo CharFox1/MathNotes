@@ -108,7 +108,7 @@ def skewCorrect(img):
     best_angle = angles[scores.index(best_score)]
     print('Best angle: {}'.format(best_angle))
     # correct skew
-    data = rotate(imgT, best_angle, reshape=False, order=0)
+    data = rotate(imgT, best_angle, reshape=False, order=0, cval=255)
     return data
 
 def preprocess(img):
@@ -133,10 +133,20 @@ def preprocess(img):
 
 def findLines(img):
 
-    horizontal_hist = np.sum(img,axis=1,keepdims=True)/255
-    plt.hist(horizontal_hist, orientation="horizontal")
-    plt.show()
+    # flip black and white back
+    #img = cv2.bitwise_not(img, 1)
+
+    #horizontal_hist = np.sum(img,axis=1,keepdims=True)/255
+    #print(horizontal_hist.shape)
+    #print(max(horizontal_hist))
+    #plt.barh(range(1531), 1, horizontal_hist)
+    #plt.show()
     
+    contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    
+    cont = cv2.drawContours(img, contours, -1, (200,0,200), 3)
+    showImage(cont, "contours")
+
     return img
 
 def main():
